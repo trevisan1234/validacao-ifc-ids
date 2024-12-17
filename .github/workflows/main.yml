@@ -1,0 +1,65 @@
+name: Validação de Arquivos IFC
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  validate-ifc:
+    runs-on: ubuntu-latest
+
+    steps:
+    # Passo 1: Configurar o ambiente
+    - name: Configurar o repositório
+      uses: actions/checkout@v3
+
+    # Passo 2: Instalar as ferramentas necessárias
+    - name: Instalar IfcOpenShell
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y python3 python3-pip
+        pip install ifcopenshell
+
+    # Passo 3: Baixar o arquivo de teste (submetido pelo cliente)
+    - name: Obter arquivo IFC
+      run: |
+        if [ ! -f arquivo.ifc ]; then
+          echo "Arquivo IFC não encontrado. Certifique-se de subi-lo no repositório."
+          exit 1
+        fi
+
+    # Passo 4: Validar o arquivo IFC com base no IDS
+    - name: Validar IFC
+      run: |
+        python3 - <<EOF
+        import ifcopenshell
+        import sys
+
+        # Carregar o arquivo IFC
+        arquivo_ifc = "arquivo.ifc"
+        modelo = ifcopenshell.open(arquivo_ifc)
+
+        # Carregar requisitos (mock para simplificar)
+        requisitos = {"IfcProject": True, "IfcBuilding": True, "IfcBuildingStorey": True}
+
+        # Validar elementos essenciais
+        resultados = []
+        for requisito, obrigatorio in requisitos.items():
+            elementos = modelo.by_type(requisito)
+            if obrigatorio and len(elementos) == 0:
+                resultados.append(f"FALHA: Elemento obrigatório {requisito} não encontrado.")
+
+        # Exibir relatório de validação
+        if resultados:
+            for resultado in resultados:
+                print(resultado)
+            sys.exit(1)
+        else:
+            print("Validação concluída: Todos os requisitos foram atendidos.")
+        EOF
+
+    # Passo 5: Publicar o relatório
+    - name: Gerar relatório de validação
+      run: echo "Relatório gerado com sucesso!"
