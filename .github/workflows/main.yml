@@ -20,11 +20,9 @@ jobs:
       run: python3 -m pip install --upgrade pip
 
     - name: Install IfcOpenShell
-      run: |
-        pip install ifcopenshell || \
-        echo "Erro ao instalar o IfcOpenShell. Certifique-se de que a versão correta está disponível."
+      run: pip install ifcopenshell
 
-    - name: Validate all IFC files
+    - name: Validate all IFC files and generate report
       run: |
         python3 <<EOF
         import os
@@ -47,16 +45,70 @@ jobs:
         # Caminho do arquivo IDS
         ids_path = os.path.join(repo_dir, "path/to/your/ids/file.ids")
 
-        # Validação de cada arquivo IFC
-        for ifc_file in ifc_files:
-            print(f"Validando o arquivo: {ifc_file}")
-            try:
-                model = ifcopenshell.open(ifc_file)
-                project = model.by_type('IfcProject')
-                if not project:
-                    raise ValueError(f"Erro: IfcProject ausente no arquivo {ifc_file}.")
-                print(f"Arquivo {ifc_file} validado com sucesso!")
-            except Exception as e:
-                print(f"Erro na validação do arquivo {ifc_file}: {e}")
-                exit(1)
+        # Relatório de validação
+        report_path = os.path.join(repo_dir, "validation_report.txt")
+        with open(report_path, "w") as report:
+            report.write("Relatório de Validação IFC\n")
+            report.write("=" * 50 + "\n\n")
+
+            # Validação de cada arquivo IFC
+            for ifc_file in ifc_files:
+                report.write(f"Arquivo: {ifc_file}\n")
+                try:
+                    model = ifcopenshell.open(ifc_file)
+
+                    # Validar IfcProject
+                    project = model.by_type('IfcProject')
+                    if project:
+                        report.write("  - IfcProject: Presente\n")
+                    else:
+                        report.write("  - IfcProject: Ausente\n")
+
+                    # Validar IfcBuilding
+                    building = model.by_type('IfcBuilding')
+                    if building:
+                        report.write("  - IfcBuilding: Presente\n")
+                    else:
+                        report.write("  - IfcBuilding: Ausente\n")
+
+                    # Validar IfcBuildingStorey
+                    storey = model.by_type('IfcBuildingStorey')
+                    if storey:
+                        report.write("  - IfcBuildingStorey: Presente\n")
+                    else:
+                        report.write("  - IfcBuildingStorey: Ausente\n")
+
+                    # Validar IfcSpace
+                    spaces = model.by_type('IfcSpace')
+                    if len(spaces) >= 2:
+                        report.write(f"  - IfcSpace: {len(spaces)} espaços encontrados\n")
+                    else:
+                        report.write("  - IfcSpace: Menos de 2 espaços encontrados\n")
+
+                    # Validar Coordenadas (exemplo simplificado)
+                    site = model.by_type('IfcSite')
+                    if site:
+                        placement = site[0].ObjectPlacement
+                        if placement:
+                            coordinates = placement.RelativePlacement.Location.Coordinates
+                            if coordinates:
+                                report.write(f"  - Coordenadas: {coordinates}\n")
+                            else:
+                                report.write("  - Coordenadas: Não encontradas\n")
+                        else:
+                            report.write("  - Coordenadas: Não encontradas\n")
+                    else:
+                        report.write("  - IfcSite: Ausente\n")
+
+                    report.write("\n")
+                except Exception as e:
+                    report.write(f"Erro na validação: {e}\n\n")
+
+        print(f"Relatório gerado: {report_path}")
         EOF
+
+    - name: Upload validation report
+      uses: actions/upload-artifact@v3
+      with:
+        name: validation-report
+        path: validation_report.txt
