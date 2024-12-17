@@ -16,10 +16,13 @@ jobs:
       with:
         python-version: '3.x'
 
+    - name: Upgrade pip
+      run: python3 -m pip install --upgrade pip
+
     - name: Install IfcOpenShell
       run: |
-        python3 -m pip install --upgrade pip
-        pip install ifcopenshell
+        pip install ifcopenshell || \
+        echo "Erro ao instalar o IfcOpenShell. Certifique-se de que a versão correta está disponível."
 
     - name: Validate all IFC files
       run: |
