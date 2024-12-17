@@ -23,6 +23,7 @@ jobs:
 
     - name: Validate all IFC files
       run: |
+        python3 <<EOF
         import os
         import ifcopenshell
 
@@ -55,3 +56,4 @@ jobs:
             except Exception as e:
                 print(f"Erro na validação do arquivo {ifc_file}: {e}")
                 exit(1)
+        EOF
