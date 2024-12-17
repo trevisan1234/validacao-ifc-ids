@@ -21,20 +21,37 @@ jobs:
         python3 -m pip install --upgrade pip
         pip install ifcopenshell
 
-    - name: Validate IFC file
+    - name: Validate all IFC files
       run: |
-        python3 -c "
+        import os
         import ifcopenshell
-        ids = 'path/to/your/ids/file.ids'
-        ifc = 'path/to/your/ifc/file.ifc'
-        # Exemplo simples de validação
-        try:
-            model = ifcopenshell.open(ifc)
-            project = model.by_type('IfcProject')
-            if not project:
-                raise ValueError('IfcProject ausente no arquivo IFC.')
-            print('Arquivo IFC validado com sucesso!')
-        except Exception as e:
-            print(f'Erro na validação: {e}')
+
+        # Diretório onde estão os arquivos
+        repo_dir = os.getenv('GITHUB_WORKSPACE')
+
+        # Listar todos os arquivos .ifc no repositório
+        ifc_files = [
+            os.path.join(repo_dir, f)
+            for f in os.listdir(repo_dir)
+            if f.endswith('.ifc')
+        ]
+
+        if not ifc_files:
+            print("Nenhum arquivo IFC encontrado no repositório.")
             exit(1)
-        "
+
+        # Caminho do arquivo IDS
+        ids_path = os.path.join(repo_dir, "path/to/your/ids/file.ids")
+
+        # Validação de cada arquivo IFC
+        for ifc_file in ifc_files:
+            print(f"Validando o arquivo: {ifc_file}")
+            try:
+                model = ifcopenshell.open(ifc_file)
+                project = model.by_type('IfcProject')
+                if not project:
+                    raise ValueError(f"Erro: IfcProject ausente no arquivo {ifc_file}.")
+                print(f"Arquivo {ifc_file} validado com sucesso!")
+            except Exception as e:
+                print(f"Erro na validação do arquivo {ifc_file}: {e}")
+                exit(1)
