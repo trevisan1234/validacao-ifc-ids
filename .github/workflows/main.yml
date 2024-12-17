@@ -8,7 +8,7 @@ on:
 
 jobs:
   validate-ifc:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     steps:
     # Passo 1: Configurar o ambiente
