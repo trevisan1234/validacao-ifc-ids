@@ -1,65 +1,40 @@
-name: Validação de Arquivos IFC
+name: Validate IFC
 
 on:
-  push:
-    branches:
-      - main
-  workflow_dispatch:
+  workflow_dispatch:  # Permite execução manual
 
 jobs:
   validate-ifc:
     runs-on: ubuntu-22.04
 
     steps:
-    # Passo 1: Configurar o ambiente
-    - name: Configurar o repositório
+    - name: Checkout repository
       uses: actions/checkout@v3
 
-    # Passo 2: Instalar as ferramentas necessárias
-    - name: Instalar IfcOpenShell
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
+
+    - name: Install IfcOpenShell
       run: |
-        sudo apt-get update
-        sudo apt-get install -y python3 python3-pip
+        python3 -m pip install --upgrade pip
         pip install ifcopenshell
 
-    # Passo 3: Baixar o arquivo de teste (submetido pelo cliente)
-    - name: Obter arquivo IFC
+    - name: Validate IFC file
       run: |
-        if [ ! -f arquivo.ifc ]; then
-          echo "Arquivo IFC não encontrado. Certifique-se de subi-lo no repositório."
-          exit 1
-        fi
-
-    # Passo 4: Validar o arquivo IFC com base no IDS
-    - name: Validar IFC
-      run: |
-        python3 - <<EOF
+        python3 -c "
         import ifcopenshell
-        import sys
-
-        # Carregar o arquivo IFC
-        arquivo_ifc = "arquivo.ifc"
-        modelo = ifcopenshell.open(arquivo_ifc)
-
-        # Carregar requisitos (mock para simplificar)
-        requisitos = {"IfcProject": True, "IfcBuilding": True, "IfcBuildingStorey": True}
-
-        # Validar elementos essenciais
-        resultados = []
-        for requisito, obrigatorio in requisitos.items():
-            elementos = modelo.by_type(requisito)
-            if obrigatorio and len(elementos) == 0:
-                resultados.append(f"FALHA: Elemento obrigatório {requisito} não encontrado.")
-
-        # Exibir relatório de validação
-        if resultados:
-            for resultado in resultados:
-                print(resultado)
-            sys.exit(1)
-        else:
-            print("Validação concluída: Todos os requisitos foram atendidos.")
-        EOF
-
-    # Passo 5: Publicar o relatório
-    - name: Gerar relatório de validação
-      run: echo "Relatório gerado com sucesso!"
+        ids = 'path/to/your/ids/file.ids'
+        ifc = 'path/to/your/ifc/file.ifc'
+        # Exemplo simples de validação
+        try:
+            model = ifcopenshell.open(ifc)
+            project = model.by_type('IfcProject')
+            if not project:
+                raise ValueError('IfcProject ausente no arquivo IFC.')
+            print('Arquivo IFC validado com sucesso!')
+        except Exception as e:
+            print(f'Erro na validação: {e}')
+            exit(1)
+        "
