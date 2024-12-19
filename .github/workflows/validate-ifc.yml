@@ -28,7 +28,7 @@ jobs:
 
       - name: Validate IFC Files
         run: |
-          python3 https://github.com/trevisan1234/validacao-ifc-ids
+          python3 ./validate_ifc_with_ids.py
 
       - name: Upload Validation Report
         if: always()
