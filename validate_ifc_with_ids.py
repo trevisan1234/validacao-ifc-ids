@@ -58,4 +58,52 @@ def main():
             txt_file.write("\n")
 
 if __name__ == "__main__":
-    main()
+    def main():
+    # Carrega o IDS
+    try:
+        with open(IDS_PATH, "r") as f:
+            ids_root = etree.parse(f).getroot()
+        print(f"IDS carregado com sucesso de {IDS_PATH}.")
+    except Exception as e:
+        print(f"Erro ao carregar o IDS: {e}")
+        return
+
+    # Valida todos os arquivos IFC no repositório
+    validation_reports = []
+    ifc_files = [file for file in os.listdir(".") if file.endswith(".ifc")]
+    if not ifc_files:
+        print("Nenhum arquivo IFC encontrado no diretório.")
+        return
+
+    print(f"Arquivos IFC encontrados: {ifc_files}")
+    for file in ifc_files:
+        try:
+            report = validate_ifc_with_ids(file, ids_root)
+            validation_reports.append(report)
+            print(f"Validação concluída para o arquivo: {file}")
+        except Exception as e:
+            print(f"Erro ao validar o arquivo {file}: {e}")
+
+    # Salva o relatório completo em JSON
+    try:
+        with open(REPORT_PATH, "w") as report_file:
+            json.dump(validation_reports, report_file, indent=4)
+        print(f"Relatório JSON salvo em: {REPORT_PATH}")
+    except Exception as e:
+        print(f"Erro ao salvar o relatório JSON: {e}")
+
+    # Salva o relatório completo em TXT
+    try:
+        with open("validation_report.txt", "w") as txt_file:
+            for report in validation_reports:
+                txt_file.write(f"Arquivo: {report['file']}\n")
+                if "error" in report:
+                    txt_file.write(f"  Erro: {report['error']}\n")
+                else:
+                    for result in report["results"]:
+                        txt_file.write(f"  Entidade: {result['entity']}, Status: {result['status']}\n")
+                txt_file.write("\n")
+        print("Relatório TXT salvo em: validation_report.txt")
+    except Exception as e:
+        print(f"Erro ao salvar o relatório TXT: {e}")
+
