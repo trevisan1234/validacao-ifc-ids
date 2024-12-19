@@ -30,9 +30,10 @@ jobs:
         run: |
           python3 ./validate_ifc_with_ids.py
 
-      - name: Upload Validation Report
+      - name: Upload Validation Report as artifact
         if: always()
         uses: actions/upload-artifact@v3
         with:
           name: ifc-validation-report
           path: validation_report.json
+            validation_report.txt
