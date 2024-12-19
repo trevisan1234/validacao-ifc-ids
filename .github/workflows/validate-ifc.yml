@@ -35,5 +35,5 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: ifc-validation-report
-          path: validation_report.json
+          path:
             validation_report.txt
