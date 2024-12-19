@@ -1,20 +1,12 @@
-import os
-import json
-import ifcopenshell
-from lxml import etree
-
-# Caminho para o IDS
-IDS_PATH = "./ids.xsd"
-# Caminho para o relatório gerado
-REPORT_PATH = "validation_report.json"
-
 def validate_ifc_with_ids(ifc_file, ids_root):
     """Valida um arquivo IFC contra o IDS fornecido."""
     report = {"file": ifc_file, "results": []}
+    
     try:
         # Abre o arquivo IFC
+        print(f"Processando arquivo: {ifc_file}")  # Mensagem de debug
         model = ifcopenshell.open(ifc_file)
-       
+
         # Verifica se os parâmetros principais existem
         ifc_project = model.by_type("IfcProject")
         ifc_building = model.by_type("IfcBuilding")
@@ -23,7 +15,7 @@ def validate_ifc_with_ids(ifc_file, ids_root):
         coordinates = "Não disponível"
         disciplines = "Não especificado"
         technical_specifications = "Não preenchido"
-        
+
         # Verifica coordenadas
         ifc_site = model.by_type("IfcSite")
         if ifc_site:
@@ -32,7 +24,7 @@ def validate_ifc_with_ids(ifc_file, ids_root):
                 latitude = site.RefLatitude
                 longitude = site.RefLongitude
                 coordinates = f"Latitude: {latitude}, Longitude: {longitude}"
-        
+
         # Verifica as disciplinas
         for rel in model.by_type("IfcRelAssigns"):
             if hasattr(rel, "RelatingType"):
@@ -43,8 +35,8 @@ def validate_ifc_with_ids(ifc_file, ids_root):
         if specifications:
             technical_specifications = "Preenchido"
 
-        # Preenche os resultados no relatório
-        report["results"].append({
+        # Adiciona os resultados no relatório
+        result = {
             "IfcProject": "Presente" if ifc_project else "Ausente",
             "IfcBuilding": "Presente" if ifc_building else "Ausente",
             "IfcBuildingStorey": "Presente" if ifc_building_storey else "Ausente",
@@ -52,31 +44,18 @@ def validate_ifc_with_ids(ifc_file, ids_root):
             "Coordenadas": coordinates,
             "Disciplinas": disciplines,
             "Especificações Técnicas": technical_specifications,
-        })
+        }
+        
+        # Verificando se os dados foram coletados
+        print(f"Resultado para {ifc_file}: {result}")  # Mensagem de debug
+        report["results"].append(result)
     
     except Exception as e:
         report["error"] = str(e)
-   
+        print(f"Erro ao processar o arquivo {ifc_file}: {e}")  # Mensagem de erro
+    
+    # Verificando se algum resultado foi adicionado à lista
+    if not report["results"]:
+        print(f"A lista 'results' está vazia para o arquivo: {ifc_file}")  # Mensagem de debug
+    
     return report
-
-def main():
-    # Carrega o IDS
-    with open(IDS_PATH, "r") as f:
-        ids_root = etree.parse(f).getroot()
-    
-    # Valida todos os arquivos IFC no repositório
-    validation_reports = []
-    for file in os.listdir("."):
-        if file.endswith(".ifc"):
-            validation_reports.append(validate_ifc_with_ids(file, ids_root))
-    
-    # Salva o relatório completo em TXT
-    with open("validation_report.txt", "w") as txt_file:
-        for report in validation_reports:
-            txt_file.write(f"Arquivo: {report['file']}\n")
-            for key, value in report["results"][0].items():
-                txt_file.write(f"  - {key}: {value}\n")
-            txt_file.write("\n")
-
-if __name__ == "__main__":
-    main()
