@@ -46,5 +46,16 @@ def main():
     with open(REPORT_PATH, "w") as report_file:
         json.dump(validation_reports, report_file, indent=4)
 
+    # Salva o relatório completo em TXT
+    with open("validation_report.txt", "w") as txt_file:
+        for report in validation_reports:
+            txt_file.write(f"Arquivo: {report['file']}\n")
+            if "error" in report:
+                txt_file.write(f"  Erro: {report['error']}\n")
+            else:
+                for result in report["results"]:
+                    txt_file.write(f"  Entidade: {result['entity']}, Status: {result['status']}\n")
+            txt_file.write("\n")
+
 if __name__ == "__main__":
     main()
