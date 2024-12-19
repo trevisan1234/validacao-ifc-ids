@@ -1,61 +1,113 @@
+import os
+import json
+import ifcopenshell
+from lxml import etree
+
+# Caminho para o IDS
+IDS_PATH = "./ids.xsd"
+# Caminho para o relatório JSON gerado
+REPORT_PATH = "validation_report.json"
+
 def validate_ifc_with_ids(ifc_file, ids_root):
     """Valida um arquivo IFC contra o IDS fornecido."""
     report = {"file": ifc_file, "results": []}
-    
     try:
         # Abre o arquivo IFC
-        print(f"Processando arquivo: {ifc_file}")  # Mensagem de debug
         model = ifcopenshell.open(ifc_file)
 
-        # Verifica se os parâmetros principais existem
-        ifc_project = model.by_type("IfcProject")
-        ifc_building = model.by_type("IfcBuilding")
-        ifc_building_storey = model.by_type("IfcBuildingStorey")
-        ifc_space = model.by_type("IfcSpace")
-        coordinates = "Não disponível"
-        disciplines = "Não especificado"
-        technical_specifications = "Não preenchido"
+        # Cria o dicionário de resultados para as entidades verificadas
+        result = {
+            "IfcProject": "Ausente",
+            "IfcBuilding": "Ausente",
+            "IfcBuildingStorey": "Ausente",
+            "IfcSpace": "Menos de 2 espaços encontrados",
+            "Coordenadas": None,
+            "Disciplinas": None,
+            "Especificações Técnicas": "Ausente"
+        }
 
-        # Verifica coordenadas
+        # Verifica se IfcProject está presente
+        if model.by_type("IfcProject"):
+            result["IfcProject"] = "Presente"
+
+        # Verifica se IfcBuilding está presente
+        if model.by_type("IfcBuilding"):
+            result["IfcBuilding"] = "Presente"
+
+        # Verifica se IfcBuildingStorey está presente
+        if model.by_type("IfcBuildingStorey"):
+            result["IfcBuildingStorey"] = "Presente"
+
+        # Verifica se há pelo menos dois IfcSpace
+        spaces = model.by_type("IfcSpace")
+        if len(spaces) >= 2:
+            result["IfcSpace"] = f"{len(spaces)} espaços encontrados"
+        else:
+            result["IfcSpace"] = "Menos de 2 espaços encontrados"
+
+        # Obtém as coordenadas (assume-se que as coordenadas são da primeira instância de IfcSite)
         ifc_site = model.by_type("IfcSite")
         if ifc_site:
-            site = ifc_site[0]
-            if hasattr(site, "RefLatitude") and hasattr(site, "RefLongitude"):
-                latitude = site.RefLatitude
-                longitude = site.RefLongitude
-                coordinates = f"Latitude: {latitude}, Longitude: {longitude}"
+            coordinates = ifc_site[0].RefLatitude, ifc_site[0].RefLongitude, ifc_site[0].RefElevation
+            result["Coordenadas"] = f"({coordinates[0]}, {coordinates[1]}, {coordinates[2]})"
+        else:
+            result["Coordenadas"] = "(0.0, 0.0, 0.0)"
 
-        # Verifica as disciplinas
-        for rel in model.by_type("IfcRelAssigns"):
-            if hasattr(rel, "RelatingType"):
-                disciplines = ", ".join([rel.RelatingType for rel in model.by_type("IfcRelAssigns")])
+        # Verifica se há disciplinas (assume-se que são tipos IfcRelAssociatesDocument)
+        disciplines = model.by_type("IfcRelAssociatesDocument")
+        if disciplines:
+            result["Disciplinas"] = ", ".join([discipline.RelatedDocuments[0].Name for discipline in disciplines])
+        else:
+            result["Disciplinas"] = "Nenhuma disciplina encontrada"
 
-        # Verifica especificações técnicas
-        specifications = model.by_type("IfcSpecification")
+        # Verifica se há especificações técnicas
+        specifications = model.by_type("IfcDocumentReference")
         if specifications:
-            technical_specifications = "Preenchido"
+            result["Especificações Técnicas"] = "Preenchidas"
+        else:
+            result["Especificações Técnicas"] = "Ausentes"
 
-        # Adiciona os resultados no relatório
-        result = {
-            "IfcProject": "Presente" if ifc_project else "Ausente",
-            "IfcBuilding": "Presente" if ifc_building else "Ausente",
-            "IfcBuildingStorey": "Presente" if ifc_building_storey else "Ausente",
-            "IfcSpace": f"{len(ifc_space)} espaços encontrados" if len(ifc_space) >= 2 else "Menos de 2 espaços encontrados",
-            "Coordenadas": coordinates,
-            "Disciplinas": disciplines,
-            "Especificações Técnicas": technical_specifications,
-        }
-        
-        # Verificando se os dados foram coletados
-        print(f"Resultado para {ifc_file}: {result}")  # Mensagem de debug
+        # Adiciona o resultado ao relatório
         report["results"].append(result)
-    
+
     except Exception as e:
         report["error"] = str(e)
-        print(f"Erro ao processar o arquivo {ifc_file}: {e}")  # Mensagem de erro
-    
-    # Verificando se algum resultado foi adicionado à lista
-    if not report["results"]:
-        print(f"A lista 'results' está vazia para o arquivo: {ifc_file}")  # Mensagem de debug
-    
+
     return report
+
+
+def main():
+    # Carrega o IDS
+    with open(IDS_PATH, "r") as f:
+        ids_root = etree.parse(f).getroot()
+
+    # Valida todos os arquivos IFC no repositório
+    validation_reports = []
+    for file in os.listdir("."):
+        if file.endswith(".ifc"):
+            validation_reports.append(validate_ifc_with_ids(file, ids_root))
+
+    # Salva o relatório completo em formato JSON
+    with open(REPORT_PATH, "w") as report_file:
+        json.dump(validation_reports, report_file, indent=4)
+
+    # Salva o relatório completo em formato TXT
+    with open("validation_report.txt", "w") as txt_file:
+        for report in validation_reports:
+            txt_file.write(f"Arquivo: {report['file']}\n")
+            if "error" in report:
+                txt_file.write(f"  Erro: {report['error']}\n")
+            else:
+                for result in report["results"]:
+                    txt_file.write(f"  IfcProject: {result['IfcProject']}\n")
+                    txt_file.write(f"  IfcBuilding: {result['IfcBuilding']}\n")
+                    txt_file.write(f"  IfcBuildingStorey: {result['IfcBuildingStorey']}\n")
+                    txt_file.write(f"  IfcSpace: {result['IfcSpace']}\n")
+                    txt_file.write(f"  Coordenadas: {result['Coordenadas']}\n")
+                    txt_file.write(f"  Disciplinas: {result['Disciplinas']}\n")
+                    txt_file.write(f"  Especificações Técnicas: {result['Especificações Técnicas']}\n")
+            txt_file.write("\n")
+
+
+if __name__ == "__main__":
+    main()
