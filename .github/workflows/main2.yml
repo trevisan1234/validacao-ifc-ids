@@ -1,4 +1,4 @@
-name: Validate IFC Files
+name: Validate IFC Files with IDS
 
 on:
   push:
@@ -21,10 +21,18 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Install IfcOpenShell
+      - name: Install Dependencies
         run: |
           python3 -m pip install --upgrade pip
-          python3 -m pip install ifcopenshell
+          python3 -m pip install ifcopenshell lxml
 
-      - name: Validate IFC files
-        run: python3 path/to/your/script.py
+      - name: Validate IFC Files
+        run: |
+          python3 path/to/validate_ifc_with_ids.py
+
+      - name: Upload Validation Report
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: ifc-validation-report
+          path: validation_report.json
