@@ -4,7 +4,7 @@ import ifcopenshell
 from lxml import etree
 
 # Caminho para o IDS
-IDS_PATH = "path/to/your/ids.xml"
+IDS_PATH = "https://github.com/trevisan1234/validacao-ifc-ids/edit/main/validate_ifc_with_ids.py"
 # Caminho para o relatório gerado
 REPORT_PATH = "validation_report.json"
 
