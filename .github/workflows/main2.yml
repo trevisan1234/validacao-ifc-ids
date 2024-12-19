@@ -1,0 +1,118 @@
+import os
+import ifcopenshell
+
+# Caminho do diretório do repositório
+repo_dir = os.getenv('GITHUB_WORKSPACE')
+
+# Caminho do arquivo IDS
+ids_path = os.path.join(repo_dir, "path/to/your/ids/file.ids")
+
+# Listar todos os arquivos IFC no repositório
+ifc_files = [
+    os.path.join(repo_dir, f)
+    for f in os.listdir(repo_dir)
+    if f.endswith('.ifc')
+]
+
+if not ifc_files:
+    print("Nenhum arquivo IFC encontrado no repositório.")
+    exit(1)
+
+# Caminho do relatório de validação
+report_path = os.path.join(repo_dir, "validation_report.txt")
+with open(report_path, "w") as report:
+    report.write("Relatório de Validação IFC\n")
+    report.write("=" * 50 + "\n\n")
+
+    for ifc_file in ifc_files:
+        report.write(f"Arquivo: {ifc_file}\n")
+        try:
+            model = ifcopenshell.open(ifc_file)
+
+            # Verificar IfcProject
+            project = model.by_type('IfcProject')
+            if project:
+                report.write("  - IfcProject: OK\n")
+            else:
+                report.write("  - IfcProject: Ausente\n")
+
+            # Verificar IfcBuilding
+            building = model.by_type('IfcBuilding')
+            if building:
+                report.write("  - IfcBuilding: OK\n")
+            else:
+                report.write("  - IfcBuilding: Ausente\n")
+
+            # Verificar IfcBuildingStorey
+            storey = model.by_type('IfcBuildingStorey')
+            if storey:
+                report.write(f"  - IfcBuildingStorey: {len(storey)} encontrado(s)\n")
+            else:
+                report.write("  - IfcBuildingStorey: Ausente\n")
+
+            # Verificar IfcSpace
+            spaces = model.by_type('IfcSpace')
+            if len(spaces) >= 2:
+                report.write(f"  - IfcSpace: {len(spaces)} encontrado(s)\n")
+            else:
+                report.write("  - IfcSpace: Menos de 2 espaços\n")
+
+            # Verificar coordenadas geográficas
+            site = model.by_type('IfcSite')
+            if site:
+                placement = site[0].ObjectPlacement
+                if placement:
+                    coordinates = placement.RelativePlacement.Location.Coordinates
+                    if coordinates and -34.0 <= coordinates[0] <= 5.3 and -74.0 <= coordinates[1] <= -34.0:
+                        report.write(f"  - Coordenadas: {coordinates} OK\n")
+                    else:
+                        report.write(f"  - Coordenadas: {coordinates} fora do Brasil\n")
+                else:
+                    report.write("  - Coordenadas: Não encontradas\n")
+            else:
+                report.write("  - IfcSite: Ausente\n")
+
+            # Verificar disciplinas de projeto
+            disciplines = model.by_type('IfcBuildingElement')
+            valid_disciplines = {"Arquitetura", "Estrutura", "Instalações"}
+            found_disciplines = set()
+            for element in disciplines:
+                props = element.IsDefinedBy
+                for prop in props:
+                    if hasattr(prop, "RelatingPropertyDefinition"):
+                        relating = prop.RelatingPropertyDefinition
+                        if relating.Name == "Pset_Classification":
+                            discipline = relating.HasProperties[0].NominalValue.wrappedValue
+                            if discipline in valid_disciplines:
+                                found_disciplines.add(discipline)
+            if valid_disciplines.issubset(found_disciplines):
+                report.write("  - Disciplinas: Todas encontradas\n")
+            else:
+                report.write(f"  - Disciplinas ausentes: {valid_disciplines - found_disciplines}\n")
+
+            # Verificar elementos duplicados ou sobrepostos
+            # Aqui você precisará implementar lógica específica de verificação
+
+            # Verificar especificações técnicas
+            elements = model.by_type('IfcElement')
+            specs_found = False
+            for element in elements:
+                props = element.IsDefinedBy
+                for prop in props:
+                    if hasattr(prop, "RelatingPropertyDefinition"):
+                        relating = prop.RelatingPropertyDefinition
+                        if relating.Name == "Pset_ElementTechnical":
+                            specs_found = True
+                            break
+                if specs_found:
+                    break
+            if specs_found:
+                report.write("  - Especificações técnicas: OK\n")
+            else:
+                report.write("  - Especificações técnicas: Ausentes\n")
+
+            report.write("\n")
+        except Exception as e:
+            report.write(f"Erro na validação: {e}\n\n")
+
+print(f"Relatório gerado: {report_path}")
