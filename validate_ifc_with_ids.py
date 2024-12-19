@@ -48,10 +48,12 @@ def validate_ifc_with_ids(ifc_file, ids_root):
         # Obtém as coordenadas (assume-se que as coordenadas são da primeira instância de IfcSite)
         ifc_site = model.by_type("IfcSite")
         if ifc_site:
-            coordinates = ifc_site[0].RefLatitude, ifc_site[0].RefLongitude, ifc_site[0].RefElevation
-            result["Coordenadas"] = f"({coordinates[0]}, {coordinates[1]}, {coordinates[2]})"
+            latitude = ifc_site[0].RefLatitude if ifc_site[0].RefLatitude is not None else 0.0
+            longitude = ifc_site[0].RefLongitude if ifc_site[0].RefLongitude is not None else 0.0
+            elevation = ifc_site[0].RefElevation if ifc_site[0].RefElevation is not None else 0.0
+            result["Coordenadas"] = f"Latitude: {latitude:.4f}, Longitude: {longitude:.4f}, Elevation: {elevation:.2f}m"
         else:
-            result["Coordenadas"] = "(0.0, 0.0, 0.0)"
+            result["Coordenadas"] = "Coordenadas não encontradas"
 
         # Verifica se há disciplinas (assume-se que são tipos IfcRelAssociatesDocument)
         disciplines = model.by_type("IfcRelAssociatesDocument")
