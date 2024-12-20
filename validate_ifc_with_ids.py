@@ -11,6 +11,7 @@ REPORT_PATH = "validation_report.json"
 def validate_ifc_with_ids(ifc_file, ids_root):
     """Valida um arquivo IFC contra o IDS fornecido."""
     report = {"file": ifc_file, "results": []}
+    
     try:
         # Abre o arquivo IFC
         model = ifcopenshell.open(ifc_file)
@@ -48,9 +49,22 @@ def validate_ifc_with_ids(ifc_file, ids_root):
         # Obtém as coordenadas (assume-se que as coordenadas são da primeira instância de IfcSite)
         ifc_site = model.by_type("IfcSite")
         if ifc_site:
-            latitude = ifc_site[0].RefLatitude if ifc_site[0].RefLatitude is not None else 0.0
-            longitude = ifc_site[0].RefLongitude if ifc_site[0].RefLongitude is not None else 0.0
+            # Obter coordenadas, considerando que alguns valores podem ser None ou zero
+            def convert_to_decimal(degrees_tuple):
+                """Converte uma tupla (graus, minutos, segundos, frações) em decimal."""
+                if degrees_tuple:
+                    degrees, minutes, seconds, *fractions = degrees_tuple
+                    decimal = degrees + (minutes / 60) + (seconds / 3600)
+                    if fractions:
+                        decimal += fractions[0] / (3600 * 10000)  # Assume que frações são baseadas em décimos de segundos
+                    return decimal
+                return 0.0
+
+            latitude = convert_to_decimal(ifc_site[0].RefLatitude)
+            longitude = convert_to_decimal(ifc_site[0].RefLongitude)
             elevation = ifc_site[0].RefElevation if ifc_site[0].RefElevation is not None else 0.0
+
+            # Apresentação das coordenadas de forma compreensível
             result["Coordenadas"] = f"Latitude: {latitude:.4f}, Longitude: {longitude:.4f}, Elevation: {elevation:.2f}m"
         else:
             result["Coordenadas"] = "Coordenadas não encontradas"
