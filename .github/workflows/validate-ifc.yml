@@ -1,6 +1,8 @@
 name: Validate IFC Files with IDS
 
+
 on:
+  workflow_dispatch:  # Permite execução manual
   push:
     branches:
       - main
