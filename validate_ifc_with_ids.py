@@ -8,6 +8,13 @@ IDS_PATH = "./ids.xsd"
 # Caminho para o relatório JSON gerado
 REPORT_PATH = "validation_report.json"
 
+# Definindo a lista de campos adicionais fora da função
+additional_fields = [
+    "IfcWall", "IfcSlab", "IfcWindow", "IfcDoor",
+    "IfcBeam", "IfcColumn", "IfcRailing",
+    "IfcStair", "IfcRoof"
+]
+
 def validate_ifc_with_ids(ifc_file, ids_root):
     """Valida um arquivo IFC contra o IDS fornecido."""
     report = {"file": ifc_file, "results": []}
@@ -45,6 +52,14 @@ def validate_ifc_with_ids(ifc_file, ids_root):
             result["IfcSpace"] = f"{len(spaces)} espaços encontrados"
         else:
             result["IfcSpace"] = "Menos de 2 espaços encontrados"
+
+        # Verifica a presença dos novos campos Ifc
+        for field in additional_fields:
+            entities = model.by_type(field)
+            if entities:
+                result[field] = f"{len(entities)} encontrados"
+            else:
+                result[field] = "Ausente"
 
         # Obtém as coordenadas (assume-se que as coordenadas são da primeira instância de IfcSite)
         ifc_site = model.by_type("IfcSite")
@@ -122,8 +137,11 @@ def main():
                     txt_file.write(f"  Coordenadas: {result['Coordenadas']}\n")
                     txt_file.write(f"  Disciplinas: {result['Disciplinas']}\n")
                     txt_file.write(f"  Especificações Técnicas: {result['Especificações Técnicas']}\n")
+                    # Loop para os novos campos Ifc
+                    for field in additional_fields:
+                        if field in result:
+                            txt_file.write(f"  {field}: {result[field]}\n")
             txt_file.write("\n")
-
 
 if __name__ == "__main__":
     main()
