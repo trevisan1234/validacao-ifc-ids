@@ -211,28 +211,20 @@ def main():
             txt_file.write(f"Arquivo: {report['file']}\n")
             if "error" in report:
                 txt_file.write(f"  Erro: {report['error']}\n")
-                for key, value in report["results"][0].items():
-                    if key not in ["IgnoredFields", "IfcPostalAddress"]:  # Ignorar campos especiais por enquanto
-                        txt_file.write(f"    {key}: {value}\n")
-                    elif key == "IgnoredFields":
-                        for field_info in value:  # value é uma lista de dicionários
+            else
+                for result in report["results"]:    
+                    for key, value in report["results"][0].items():
+                    # Escreve as coordenadas de forma separada (Latitude, Longitude, Elevação)
+                        if key in ["Latitude", "Longitude", "Elevação"]:
+                            txt_file.write(f"    {key}: {value}\n")
+                        elif key == "IgnoredFields":
+                            for field_info in value:  # value é uma lista de dicionários
+                            if key not in ["IgnoredFields", "IfcPostalAddress"]:  # Ignorar campos especiais por enquanto
+                                txt_file.write(f"    {key}: {value}\n")
+                    
                             txt_file.write(f"    {field_info['Field']}: não suportado no esquema {field_info['Schema']}\n")
                     elif key == "IfcPostalAddress":
                         txt_file.write(f"  Endereço: {value}\n")
-
-            else:
-                for result in report["results"]:
-                    for key, value in result.items():
-                        # Escreve as coordenadas de forma separada (Latitude, Longitude, Elevação)
-                        if key in ["Latitude", "Longitude", "Elevação"]:
-                            txt_file.write(f"    {key}: {value}\n")
-                        elif key == "IfcPostalAddress":
-                            txt_file.write(f"  Endereço: {value}\n")
-                        if key == "IgnoredFields":
-                            for field_info in value:  # value é uma lista de dicionários
-                                txt_file.write(f"    {field_info['Field']}: não suportado no esquema {field_info['Schema']}\n")
-                        else:
-                            txt_file.write(f"    {key}: {value}\n")
 
     # Salva o relatório CSV
     print("Salvando relatório CSV...")
