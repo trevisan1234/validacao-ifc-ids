@@ -69,7 +69,11 @@ def validate_ifc_with_ids(file, ids_root):
         supported_fields = [field for field in additional_fields if is_field_supported(schema.upper(), field)]
 
         # Conta os elementos dos campos adicionais suportados
-        additional_data = {field: len(ifc_file.by_type(field)) for field in supported_fields}
+        additional_data = {}
+        for field in supported_fields:
+            entities = ifc_file.by_type(field)
+            additional_data[field] = len(entities) if entities else 0
+
 
         # Identificar os campos ignorados
         ignored_fields = [field for field in additional_fields if field not in supported_fields]
