@@ -229,7 +229,6 @@ def main():
                         elif key == "IfcPostalAddress":
                             txt_file.write(f"  Endereço: {value}\n")
                         if key == "IgnoredFields":
-                            txt_file.write("  Campos ignorados por esquema:\n")
                             for field_info in value:  # value é uma lista de dicionários
                                 txt_file.write(f"    {field_info['Field']}: não suportado no esquema {field_info['Schema']}\n")
                         else:
