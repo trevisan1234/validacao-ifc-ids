@@ -108,7 +108,28 @@ def validate_ifc_with_ids(file, ids_root):
         
         return result
     except Exception as e:
-        return {"file": file, "error": f"Erro ao processar {file}: {str(e)}"}
+        result = {
+            "file": file,
+            "results": [{
+                "IfcProject": 0,
+                "IfcBuilding": 0,
+                "IfcBuildingStorey": 0,
+                "IfcSpace": 0,
+                "Latitude": 0,
+                "Longitude": 0,
+                "Elevação": 0,
+                "IfcPostalAddress": "Erro ao processar endereço",
+                "IgnoredFields": [],
+            }]
+        }
+        # Preencher os campos adicionais com 0
+        for field in additional_fields:
+            result["results"][0][field] = 0
+
+        # Adicionar a mensagem de erro no resultado
+        result["error"] = f"Erro ao processar {file}: {str(e)}"
+
+        return result
 
 # Função para obter coordenadas em formato legível
 def get_coordinates(ifc_file):
@@ -172,8 +193,11 @@ def main():
     validation_reports = []
     for file in os.listdir("."):
         if file.endswith(".ifc"):
-            print(f"Validando: {file}")
-            validation_reports.append(validate_ifc_with_ids(file, ids_root))
+            try:
+                print(f"Validando: {file}")
+                validation_reports.append(validate_ifc_with_ids(file, ids_root))
+            except Exception as e:
+                validation_reports.append({"file": file, "error": f"Erro inesperado: {str(e)}"})
 
     # Salva o relatório JSON
     print("Salvando relatório JSON...")
@@ -187,6 +211,16 @@ def main():
             txt_file.write(f"Arquivo: {report['file']}\n")
             if "error" in report:
                 txt_file.write(f"  Erro: {report['error']}\n")
+                for key, value in report["results"][0].items():
+                    if key not in ["IgnoredFields", "IfcPostalAddress"]:  # Ignorar campos especiais por enquanto
+                        txt_file.write(f"    {key}: {value}\n")
+                    elif key == "IgnoredFields":
+                        txt_file.write("  Campos ignorados por esquema:\n")
+                        for field_info in value:  # value é uma lista de dicionários
+                            txt_file.write(f"    {field_info['Field']}: não suportado no esquema {field_info['Schema']}\n")
+                    elif key == "IfcPostalAddress":
+                        txt_file.write(f"  Endereço: {value}\n")
+
             else:
                 for result in report["results"]:
                     for key, value in result.items():
@@ -210,7 +244,13 @@ def main():
         csv_writer.writerow(headers)
         for report in validation_reports:
             if "error" in report:
-                csv_writer.writerow([report["file"], report["error"]] + [""] * (len(headers) - 2))
+                row = [report["file"]]
+                row.extend(report["results"][0].get(field, 0) for field in ["IfcProject", "IfcBuilding", "IfcBuildingStorey", "IfcSpace", "Latitude", "Longitude", "Elevação", "IfcPostalAddress"])
+                ignored_fields_str = "; ".join([f"{field['Field']} ({field['Schema']})" for field in report["results"][0].get("IgnoredFields", [])])
+                row.append(ignored_fields_str)
+                row.extend(report["results"][0].get(field, 0) for field in additional_fields)
+                csv_writer.writerow(row)
+
             else:
                 for result in report["results"]:
                     row = [report["file"]]
