@@ -211,20 +211,18 @@ def main():
             txt_file.write(f"Arquivo: {report['file']}\n")
             if "error" in report:
                 txt_file.write(f"  Erro: {report['error']}\n")
-            else
-                for result in report["results"]:    
-                    for key, value in report["results"][0].items():
-                    # Escreve as coordenadas de forma separada (Latitude, Longitude, Elevação)
+            else:
+                for result in report["results"]:
+                    for key, value in result.items():
                         if key in ["Latitude", "Longitude", "Elevação"]:
                             txt_file.write(f"    {key}: {value}\n")
                         elif key == "IgnoredFields":
-                            for field_info in value:  # value é uma lista de dicionários
-                            if key not in ["IgnoredFields", "IfcPostalAddress"]:  # Ignorar campos especiais por enquanto
-                                txt_file.write(f"    {key}: {value}\n")
-                    
-                            txt_file.write(f"    {field_info['Field']}: não suportado no esquema {field_info['Schema']}\n")
-                    elif key == "IfcPostalAddress":
-                        txt_file.write(f"  Endereço: {value}\n")
+                            for field_info in value:
+                                txt_file.write(f"    {field_info['Field']}: não suportado no esquema {field_info['Schema']}\n")
+                        elif key == "IfcPostalAddress":
+                            txt_file.write(f"  Endereço: {value}\n")
+                        else:
+                            txt_file.write(f"    {key}: {value}\n")
 
     # Salva o relatório CSV
     print("Salvando relatório CSV...")
@@ -237,13 +235,12 @@ def main():
                 row = [report["file"], 0, 0, 0, 0, 0, 0, 0, "Erro ao processar", ""]
                 row.extend(0 for _ in additional_fields)
                 csv_writer.writerow(row)
-
-            else 
+            else:
                 for result in report["results"]:
                     row = [report["file"]]
                     row.extend(result.get(field, 0) for field in [
-                    "IfcProject", "IfcBuilding", "IfcBuildingStorey", "IfcSpace",
-                    "Latitude", "Longitude", "Elevação", "IfcPostalAddress"
+                        "IfcProject", "IfcBuilding", "IfcBuildingStorey", "IfcSpace",
+                        "Latitude", "Longitude", "Elevação", "IfcPostalAddress"
                     ])
                     ignored_fields_str = "; ".join([f"{field['Field']} ({field['Schema']})" for field in result.get("IgnoredFields", [])])
                     row.append(ignored_fields_str)
