@@ -169,7 +169,7 @@ def main():
     for file in os.listdir("."):
         if file.endswith(".ifc"):
             print(f"Validando: {file}")
-            validation_reports.append(validate_ifc_with_ids(file))
+            validation_reports.append(validate_ifc_with_ids(file, ids_root))
 
     # Salva o relatório JSON
     print("Salvando relatório JSON...")
