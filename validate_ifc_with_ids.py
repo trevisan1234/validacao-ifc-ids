@@ -242,18 +242,18 @@ def main():
         csv_writer.writerow(headers)
         for report in validation_reports:
             if "error" in report:
-                row = [report["file"]]
-                row.extend(report["results"][0].get(field, 0) for field in ["IfcProject", "IfcBuilding", "IfcBuildingStorey", "IfcSpace", "Latitude", "Longitude", "Elevação", "IfcPostalAddress"])
-                ignored_fields_str = "; ".join([f"{field['Field']} ({field['Schema']})" for field in report["results"][0].get("IgnoredFields", [])])
-                row.append(ignored_fields_str)
-                row.extend(report["results"][0].get(field, 0) for field in additional_fields)
+                row = [report["file"], 0, 0, 0, 0, 0, 0, 0, "Erro ao processar", ""]
+                row.extend(0 for _ in additional_fields)
                 csv_writer.writerow(row)
 
-            else:
+            else 
                 for result in report["results"]:
                     row = [report["file"]]
+                    row.extend(result.get(field, 0) for field in [
+                    "IfcProject", "IfcBuilding", "IfcBuildingStorey", "IfcSpace",
+                    "Latitude", "Longitude", "Elevação", "IfcPostalAddress"
+                    ])
                     ignored_fields_str = "; ".join([f"{field['Field']} ({field['Schema']})" for field in result.get("IgnoredFields", [])])
-                    row.extend(result.get(field, 0) for field in ["IfcProject", "IfcBuilding", "IfcBuildingStorey", "IfcSpace", "Latitude", "Longitude", "Elevação", "IfcPostalAddress"])
                     row.append(ignored_fields_str)
                     row.extend(result.get(field, 0) for field in additional_fields)
                     csv_writer.writerow(row)
