@@ -5,6 +5,22 @@ from lxml import etree
 import ifcopenshell
 import pyproj
 
+# Função para verificar se uma entidade é suportada no esquema IFC
+def is_field_supported(schema, field):
+    schema_fields = {
+        "IFC2X3": [
+            "IfcWall", "IfcSlab", "IfcWindow", "IfcDoor", "IfcBeam", "IfcColumn", "IfcStair",
+            "IfcRoof", "IfcPile", "IfcFooting", "IfcCovering"
+        ],
+        "IFC4": [
+            "IfcWall", "IfcSlab", "IfcWindow", "IfcDoor", "IfcBeam", "IfcColumn", "IfcStair",
+            "IfcRoof", "IfcPile", "IfcFooting", "IfcElectricGenerator", "IfcTransformer",
+            "IfcUninterruptiblePowerSupply", "IfcCableSegment", "IfcPump", "IfcTank", 
+            "IfcWaterHeater", "IfcCovering"
+        ]
+    }
+    return field in schema_fields.get(schema, [])
+
 try:
     print("ifcopenshell importado com sucesso!")
 except ImportError as e:
@@ -46,8 +62,18 @@ def validate_ifc_with_ids(file, ids_root):
         spaces = ifc_file.by_type("IfcSpace")
         coordinates = get_coordinates(ifc_file)
         
-        # Conta os elementos dos campos adicionais
-        additional_data = {field: len(ifc_file.by_type(field)) for field in additional_fields}
+        # Obter o esquema do arquivo IFC
+        schema = ifc_file.schema.lower()  # Retorna "ifc2x3" ou "ifc4" (normalmente em minúsculas)
+
+        # Filtrar os campos adicionais com base no esquema
+        supported_fields = [field for field in additional_fields if is_field_supported(schema.upper(), field)]
+
+        # Conta os elementos dos campos adicionais suportados
+        additional_data = {field: len(ifc_file.by_type(field)) for field in supported_fields}
+
+        # Identificar os campos ignorados
+        ignored_fields = [field for field in additional_fields if field not in supported_fields]
+
 
         result = {
             "file": file,
@@ -59,6 +85,7 @@ def validate_ifc_with_ids(file, ids_root):
                 "Latitude": coordinates["Latitude"],
                 "Longitude": coordinates["Longitude"],
                 "Elevação": coordinates["Elevação"],
+                "IgnoredFields": {field: schema.upper() for field in ignored_fields}  # Campos ignorados e seus esquemas
             }]
         }
 
@@ -69,6 +96,11 @@ def validate_ifc_with_ids(file, ids_root):
         # Adiciona o endereço postal
         postal_address = get_postal_address(ifc_file)
         result["results"][0]["IfcPostalAddress"] = postal_address
+
+        # Atualiza o resultado para armazenar IgnoredFields como lista clara
+        result["results"][0]["IgnoredFields"] = [
+            {"Field": field, "Schema": schema.upper()} for field in ignored_fields
+        ]
         
         return result
     except Exception as e:
@@ -137,7 +169,7 @@ def main():
     for file in os.listdir("."):
         if file.endswith(".ifc"):
             print(f"Validando: {file}")
-            validation_reports.append(validate_ifc_with_ids(file, ids_root))
+            validation_reports.append(validate_ifc_with_ids(file))
 
     # Salva o relatório JSON
     print("Salvando relatório JSON...")
@@ -159,6 +191,10 @@ def main():
                             txt_file.write(f"    {key}: {value}\n")
                         elif key == "IfcPostalAddress":
                             txt_file.write(f"  Endereço: {value}\n")
+                        if key == "IgnoredFields":
+                            txt_file.write("  Campos ignorados por esquema:\n")
+                            for field_info in value:  # value é uma lista de dicionários
+                                txt_file.write(f"    {field}: não suportado no esquema {scheme}\n")
                         else:
                             txt_file.write(f"    {key}: {value}\n")
 
@@ -166,7 +202,7 @@ def main():
     print("Salvando relatório CSV...")
     with open(CSV_REPORT_PATH, "w", newline="") as csv_file:
         csv_writer = csv.writer(csv_file)
-        headers = ["Arquivo", "IfcProject", "IfcBuilding", "IfcBuildingStorey", "IfcSpace", "Latitude", "Longitude", "Elevação", "IfcPostalAddress"] + additional_fields
+        headers = ["Arquivo", "IfcProject", "IfcBuilding", "IfcBuildingStorey", "IfcSpace", "Latitude", "Longitude", "Elevação", "IfcPostalAddress", "IgnoredFields"] + additional_fields
         csv_writer.writerow(headers)
         for report in validation_reports:
             if "error" in report:
@@ -174,7 +210,9 @@ def main():
             else:
                 for result in report["results"]:
                     row = [report["file"]]
-                    row.extend(result.get(field, 0) if isinstance(result, dict) else 0 for field in headers[1:])
+                    row.append("; ".join([f"{field} ({scheme})" for field, scheme in result.get("IgnoredFields", {}).items()]))
+                    row.extend(result.get(field, 0) for field in headers[1:-len(additional_fields)])
+                    row.extend(result.get(field, 0) for field in additional_fields)
                     csv_writer.writerow(row)
 
 if __name__ == "__main__":
