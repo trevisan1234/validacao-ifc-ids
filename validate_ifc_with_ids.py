@@ -17,15 +17,22 @@ TXT_REPORT_PATH = "./validation_report.txt"
 JSON_REPORT_PATH = "./validation_report.json"
 CSV_REPORT_PATH = "./validation_report.csv"
 
-# Campos adicionais para validação
 additional_fields = [
-    "IfcWall", "IfcSlab", "IfcWindow", "IfcDoor", "IfcBeam", "IfcColumn", "IfcStair", "IfcRoof"
+    "IfcWall", "IfcSlab", "IfcWindow", "IfcDoor", "IfcBeam", "IfcColumn", "IfcStair", "IfcRoof",
+    "IfcPile",  # Elementos de concreto armado em fundações profundas
+    "IfcFooting",  # Elementos de concreto armado em fundações rasas
+    "IfcElectricGenerator", "IfcTransformer", "IfcUninterruptiblePowerSupply",  # Instalações elétricas de alto custo
+    "IfcCableSegment",  # Condutores de energia elétrica
+    "IfcPump", "IfcTank", "IfcWaterHeater",  # Instalações hidráulicas/sanitárias de alto custo
+    "IfcCovering"  # Elementos de impermeabilização
 ]
 
 # Função para validar a presença dos campos no arquivo IFC
 def validate_ifc_with_ids(file, ids_root):
     try:
         ifc_file = ifcopenshell.open(file)
+
+        # Campos básicos
         project = ifc_file.by_type("IfcProject")
         building = ifc_file.by_type("IfcBuilding")
         
