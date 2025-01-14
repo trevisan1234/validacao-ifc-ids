@@ -71,13 +71,14 @@ def validate_ifc_with_ids(file, ids_root):
         # Conta os elementos dos campos adicionais suportados
         additional_data = {}
         for field in supported_fields:
-            entities = ifc_file.by_type(field)
-            additional_data[field] = len(entities) if entities else 0
-
+            try:
+                entities = ifc_file.by_type(field)
+                additional_data[field] = len(entities) if entities else 0
+            except Exception as e:
+                additional_data[field] = f"Erro ao processar {field}: {str(e)}"
 
         # Identificar os campos ignorados
         ignored_fields = [field for field in additional_fields if field not in supported_fields]
-
 
         result = {
             "file": file,
