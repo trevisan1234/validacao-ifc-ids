@@ -194,7 +194,7 @@ def main():
                         if key == "IgnoredFields":
                             txt_file.write("  Campos ignorados por esquema:\n")
                             for field_info in value:  # value é uma lista de dicionários
-                                txt_file.write(f"    {field}: não suportado no esquema {scheme}\n")
+                                txt_file.write(f"    {field_info['Field']}: não suportado no esquema {field_info['Schema']}\n")
                         else:
                             txt_file.write(f"    {key}: {value}\n")
 
@@ -210,8 +210,9 @@ def main():
             else:
                 for result in report["results"]:
                     row = [report["file"]]
-                    row.append("; ".join([f"{field} ({scheme})" for field, scheme in result.get("IgnoredFields", {}).items()]))
-                    row.extend(result.get(field, 0) for field in headers[1:-len(additional_fields)])
+                    ignored_fields_str = "; ".join([f"{field['Field']} ({field['Schema']})" for field in result.get("IgnoredFields", [])])
+                    row.extend(result.get(field, 0) for field in ["IfcProject", "IfcBuilding", "IfcBuildingStorey", "IfcSpace", "Latitude", "Longitude", "Elevação", "IfcPostalAddress"])
+                    row.append(ignored_fields_str)
                     row.extend(result.get(field, 0) for field in additional_fields)
                     csv_writer.writerow(row)
 
