@@ -60,8 +60,7 @@ def extract_volume_from_ifc(file_path):
                 "ElementDetails": element_volumes
             }, json_file, indent=4)
 
-        print(f"Relatórios gerados com sucesso: {txt_path}, {csv_path}, {json_path}")
-        
+        print(f"Relatórios gerados para: {file_path}")
         return [txt_path, csv_path, json_path]  # Retorna os caminhos dos relatórios gerados
 
     except Exception as e:
@@ -80,5 +79,5 @@ def process_all_ifc_files():
     return report_files
 
 if __name__ == "__main__":
-    report_files = process_all_ifc_files()
-    print(f"Relatórios gerados para os arquivos: {report_files}")
+    all_reports = process_all_ifc_files()
+    print(f"Relatórios gerados: {all_reports}")
