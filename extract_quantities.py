@@ -1,15 +1,16 @@
 import ifcopenshell
+import ifcopenshell.util.element
 import json
 import csv
 import os
 
 def calculate_volume_alternative(element):
     """
-    Calcula o volume de um elemento a partir de suas propriedades, caso disponível.
+    Calcula o volume de um elemento usando propriedades ou geometria.
     Retorna o volume em metros cúbicos ou 0 se não for possível calcular.
     """
     try:
-        # Verificar propriedades definidas no elemento
+        # Fallback 1: Propriedades (Volume em IfcPropertySet)
         for definition in element.IsDefinedBy:
             if definition.is_a("IfcRelDefinesByProperties"):
                 property_set = definition.RelatingPropertyDefinition
@@ -19,7 +20,14 @@ def calculate_volume_alternative(element):
                             return float(property.NominalValue.wrappedValue)
     except AttributeError:
         pass
-    return 0  # Retorna 0 caso o cálculo não seja possível
+
+    try:
+        # Fallback 2: Geometria (calculada pela função util.element.volume)
+        return ifcopenshell.util.element.volume(element)
+    except Exception:
+        pass
+
+    return 0  # Retorna 0 caso nenhuma alternativa funcione
 
 def extract_volume_from_ifc(file_path):
     """
@@ -44,10 +52,9 @@ def extract_volume_from_ifc(file_path):
                                 volume = quantity.VolumeValue
                                 break
                 except AttributeError:
-                    # Continuar para o cálculo alternativo
                     pass
 
-                # Caso não tenha HasQuantities, calcular o volume usando propriedades
+                # Usar cálculo alternativo, se necessário
                 if volume == 0:
                     volume = calculate_volume_alternative(element)
 
