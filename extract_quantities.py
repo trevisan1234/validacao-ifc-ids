@@ -13,10 +13,6 @@ def extract_volume_from_ifc(file_path):
         # Carregar o arquivo IFC
         ifc_file = ifcopenshell.open(file_path)
 
-        # Verificar a versão do arquivo
-        ifc_version = ifc_file.schema
-        print(f"Versão do IFC: {ifc_version}")
-
         # Elementos a serem analisados
         elements_to_check = ["IfcBeam", "IfcColumn", "IfcSlab", "IfcPile"]
         total_volume = 0.0
