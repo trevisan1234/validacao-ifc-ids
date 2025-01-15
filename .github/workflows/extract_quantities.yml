@@ -20,7 +20,7 @@ jobs:
           python-version: '3.9'
 
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: pip install ifcopenshell
 
       - name: List IFC files
         run: ls -l *.ifc
@@ -29,3 +29,6 @@ jobs:
         run: python extract_quantities.py
         env:
           PYTHONUNBUFFERED: 1
+
+      - name: List output files
+        run: ls -l
