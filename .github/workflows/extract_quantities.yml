@@ -22,5 +22,8 @@ jobs:
       - name: Install dependencies
         run: pip install ifcopenshell
 
-      - name: Run extraction script
+      - name: Run extraction script for all IFC files
         run: python extract_quantities.py
+        continue-on-error: false
+        env:
+          PYTHONUNBUFFERED: 1
