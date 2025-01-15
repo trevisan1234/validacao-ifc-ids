@@ -36,5 +36,5 @@ jobs:
       - name: Upload extracted reports as artifacts
         uses: actions/upload-artifact@v3
         with:
-          name: extracted-reports
-          path: reports/*
+          name: ifc-quantities-reports
+          path: ./*.quantities_report.*
