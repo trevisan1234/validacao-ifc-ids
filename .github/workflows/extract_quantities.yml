@@ -30,8 +30,8 @@ jobs:
         env:
           PYTHONUNBUFFERED: 1
 
-      - name: Upload extracted reports as artifacts
+      - name: Upload reports as artifacts
         uses: actions/upload-artifact@v3
         with:
           name: ifc-quantities-reports
-          path: ./*.quantities_report.*
+          path: ./*_quantities_report.*
