@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - '**.ifc'
+      - '**/*.ifc'
       - 'extract_quantities.py'
 
 jobs:
@@ -24,6 +24,5 @@ jobs:
 
       - name: Run extraction script for all IFC files
         run: python extract_quantities.py
-        continue-on-error: false
         env:
           PYTHONUNBUFFERED: 1
