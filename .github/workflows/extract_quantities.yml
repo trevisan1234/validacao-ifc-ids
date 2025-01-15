@@ -30,9 +30,6 @@ jobs:
         env:
           PYTHONUNBUFFERED: 1
 
-      - name: List output files
-        run: ls -l reports
-
       - name: Upload extracted reports as artifacts
         uses: actions/upload-artifact@v3
         with:
