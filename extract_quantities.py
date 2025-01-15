@@ -61,7 +61,8 @@ def extract_volume_from_ifc(file_path):
             }, json_file, indent=4)
 
         print(f"Relatórios gerados com sucesso: {txt_path}, {csv_path}, {json_path}")
-        return [txt_path, csv_path, json_path]  # Retorna os caminhos para upload como artifact
+        
+        return [txt_path, csv_path, json_path]  # Retorna os caminhos dos relatórios gerados
 
     except Exception as e:
         print(f"Erro ao processar o arquivo {file_path}: {e}")
