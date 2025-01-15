@@ -9,13 +9,13 @@ def calculate_volume_alternative(element):
     Retorna o volume em metros cúbicos ou 0 se não for possível calcular.
     """
     try:
-        # Verificar se o volume é uma propriedade definida no elemento
+        # Verificar propriedades definidas no elemento
         for definition in element.IsDefinedBy:
             if definition.is_a("IfcRelDefinesByProperties"):
                 property_set = definition.RelatingPropertyDefinition
                 if property_set.is_a("IfcPropertySet"):
                     for property in property_set.HasProperties:
-                        if property.is_a("IfcPropertySingleValue") and property.Name == "Volume":
+                        if property.is_a("IfcPropertySingleValue") and property.Name.lower() == "volume":
                             return float(property.NominalValue.wrappedValue)
     except AttributeError:
         pass
@@ -23,15 +23,14 @@ def calculate_volume_alternative(element):
 
 def extract_volume_from_ifc(file_path):
     """
-    Extrai o volume de elementos especificados (IfcBeam, IfcColumn, IfcSlab, IfcPile) de um arquivo IFC
+    Extrai o volume total por tipo de elemento (IfcBeam, IfcColumn, IfcSlab, IfcPile) de um arquivo IFC
     e gera relatórios nos formatos TXT, CSV e JSON.
     """
     try:
         print(f"Processando o arquivo IFC: {file_path}")
         ifc_file = ifcopenshell.open(file_path)
         elements_to_check = ["IfcBeam", "IfcColumn", "IfcSlab", "IfcPile"]
-        total_volume = 0.0
-        element_volumes = []
+        total_volumes_by_type = {element_type: 0.0 for element_type in elements_to_check}
 
         for element_type in elements_to_check:
             elements = ifc_file.by_type(element_type)
@@ -52,12 +51,8 @@ def extract_volume_from_ifc(file_path):
                 if volume == 0:
                     volume = calculate_volume_alternative(element)
 
-                total_volume += volume
-                element_volumes.append({
-                    "Element": element.GlobalId,
-                    "Type": element_type,
-                    "Volume_m3": volume
-                })
+                # Somar o volume total para o tipo de elemento
+                total_volumes_by_type[element_type] += volume
 
         # Criar nomes de arquivo baseados no nome do arquivo IFC
         base_name = os.path.splitext(os.path.basename(file_path))[0]
@@ -68,22 +63,22 @@ def extract_volume_from_ifc(file_path):
         # Relatório em TXT
         with open(txt_path, "w") as txt_file:
             txt_file.write(f"Arquivo analisado: {file_path}\n")
-            txt_file.write(f"Volume total de concreto armado (m³): {total_volume:.2f}\n")
-            txt_file.write("Detalhamento por elemento:\n")
-            for entry in element_volumes:
-                txt_file.write(f"{entry['Type']} (ID: {entry['Element']}): {entry['Volume_m3']:.2f} m³\n")
+            txt_file.write("Volumes totais por tipo de elemento (m³):\n")
+            for element_type, total_volume in total_volumes_by_type.items():
+                txt_file.write(f"{element_type}: {total_volume:.2f} m³\n")
 
         # Relatório em CSV
         with open(csv_path, "w", newline="") as csv_file:
-            csv_writer = csv.DictWriter(csv_file, fieldnames=["Element", "Type", "Volume_m3"])
-            csv_writer.writeheader()
-            csv_writer.writerows(element_volumes)
+            csv_writer = csv.writer(csv_file)
+            csv_writer.writerow(["ElementType", "TotalVolume_m3"])
+            for element_type, total_volume in total_volumes_by_type.items():
+                csv_writer.writerow([element_type, total_volume])
 
         # Relatório em JSON
         with open(json_path, "w") as json_file:
             json.dump({
-                "TotalVolume_m3": total_volume,
-                "ElementDetails": element_volumes
+                "FileName": file_path,
+                "TotalVolumesByType": total_volumes_by_type
             }, json_file, indent=4)
 
         print(f"Relatórios gerados para: {file_path}")
