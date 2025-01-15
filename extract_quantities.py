@@ -1,13 +1,15 @@
 import ifcopenshell
 import json
 import csv
+import os
 
 def extract_volume_from_ifc(file_path):
     """
-    Extrai o volume de elementos especificados (IfcBeam, IfcColumn, IfcSlab, IfcPile) em um arquivo IFC
+    Extrai o volume de elementos especificados (IfcBeam, IfcColumn, IfcSlab, IfcPile) de um arquivo IFC
     e gera relatórios nos formatos TXT, CSV e JSON.
     """
     try:
+        print(f"Processando o arquivo IFC: {file_path}")
         # Carregar o arquivo IFC
         ifc_file = ifcopenshell.open(file_path)
 
@@ -31,23 +33,27 @@ def extract_volume_from_ifc(file_path):
                                 "Volume_m3": volume
                             })
 
+        # Criar nomes de arquivo baseados no nome do arquivo IFC
+        base_name = os.path.splitext(os.path.basename(file_path))[0]
+        txt_path = f"{base_name}_quantities_report.txt"
+        csv_path = f"{base_name}_quantities_report.csv"
+        json_path = f"{base_name}_quantities_report.json"
+
         # Relatório em TXT
-        txt_path = "quantities_report.txt"
         with open(txt_path, "w") as txt_file:
+            txt_file.write(f"Arquivo analisado: {file_path}\n")
             txt_file.write(f"Volume total de concreto armado (m³): {total_volume:.2f}\n")
             txt_file.write("Detalhamento por elemento:\n")
             for entry in element_volumes:
                 txt_file.write(f"{entry['Type']} (ID: {entry['Element']}): {entry['Volume_m3']:.2f} m³\n")
 
         # Relatório em CSV
-        csv_path = "quantities_report.csv"
         with open(csv_path, "w", newline="") as csv_file:
             csv_writer = csv.DictWriter(csv_file, fieldnames=["Element", "Type", "Volume_m3"])
             csv_writer.writeheader()
             csv_writer.writerows(element_volumes)
 
         # Relatório em JSON
-        json_path = "quantities_report.json"
         with open(json_path, "w") as json_file:
             json.dump({
                 "TotalVolume_m3": total_volume,
@@ -57,9 +63,17 @@ def extract_volume_from_ifc(file_path):
         print(f"Relatórios gerados com sucesso: {txt_path}, {csv_path}, {json_path}")
 
     except Exception as e:
-        print(f"Erro ao processar o arquivo IFC: {e}")
+        print(f"Erro ao processar o arquivo {file_path}: {e}")
 
-# Caminho para o arquivo IFC (atualize conforme necessário)
+
+def process_all_ifc_files():
+    """
+    Processa todos os arquivos IFC na pasta atual (raiz).
+    """
+    for file in os.listdir("."):
+        if file.endswith(".ifc"):
+            extract_volume_from_ifc(file)
+
+
 if __name__ == "__main__":
-    file_path = "seu_arquivo.ifc"  # Substitua pelo caminho do seu arquivo IFC
-    extract_volume_from_ifc(file_path)
+    process_all_ifc_files()
