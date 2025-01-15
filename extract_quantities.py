@@ -2,6 +2,25 @@ import ifcopenshell
 import json
 import csv
 import os
+from ifcopenshell.util.element import geometry
+
+def calculate_volume(element):
+    """
+    Calcula o volume de um elemento a partir de sua geometria usando o bounding box.
+    Retorna o volume em metros cúbicos.
+    """
+    try:
+        geom = geometry(element)
+        bbox = geom.bounding_box()
+        volume = (
+            (bbox["size_x"] or 0) *
+            (bbox["size_y"] or 0) *
+            (bbox["size_z"] or 0)
+        )
+        return volume
+    except Exception as e:
+        print(f"Erro ao calcular volume para o elemento {element.GlobalId}: {e}")
+        return 0
 
 def extract_volume_from_ifc(file_path):
     """
@@ -18,21 +37,28 @@ def extract_volume_from_ifc(file_path):
         for element_type in elements_to_check:
             elements = ifc_file.by_type(element_type)
             for element in elements:
+                volume = 0
+                # Tentar extrair o volume de HasQuantities
                 try:
                     if element.HasQuantities:
                         for quantity in element.HasQuantities:
                             if quantity.is_a("IfcQuantityVolume"):
                                 volume = quantity.VolumeValue
-                                total_volume += volume
-                                element_volumes.append({
-                                    "Element": element.GlobalId,
-                                    "Type": element_type,
-                                    "Volume_m3": volume
-                                })
+                                break
                 except AttributeError:
-                    # Ignorar elementos que não possuem o atributo `HasQuantities`
-                    print(f"Aviso: Elemento {element.GlobalId} de tipo {element_type} não possui o atributo 'HasQuantities'.")
-                    continue
+                    # Continuar para o cálculo alternativo
+                    pass
+
+                # Caso não tenha HasQuantities, calcular o volume com bounding box
+                if volume == 0:
+                    volume = calculate_volume(element)
+
+                total_volume += volume
+                element_volumes.append({
+                    "Element": element.GlobalId,
+                    "Type": element_type,
+                    "Volume_m3": volume
+                })
 
         # Criar nomes de arquivo baseados no nome do arquivo IFC
         base_name = os.path.splitext(os.path.basename(file_path))[0]
