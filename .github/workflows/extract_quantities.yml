@@ -20,7 +20,10 @@ jobs:
           python-version: '3.9'
 
       - name: Install dependencies
-        run: pip install ifcopenshell
+        run: pip install -r requirements.txt
+
+      - name: List IFC files
+        run: ls -l *.ifc
 
       - name: Run extraction script for all IFC files
         run: python extract_quantities.py
