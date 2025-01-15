@@ -10,28 +10,29 @@ def extract_volume_from_ifc(file_path):
     """
     try:
         print(f"Processando o arquivo IFC: {file_path}")
-        # Carregar o arquivo IFC
         ifc_file = ifcopenshell.open(file_path)
-
-        # Elementos a serem analisados
         elements_to_check = ["IfcBeam", "IfcColumn", "IfcSlab", "IfcPile"]
         total_volume = 0.0
         element_volumes = []
 
-        # Iterar pelos tipos de elementos
         for element_type in elements_to_check:
             elements = ifc_file.by_type(element_type)
             for element in elements:
-                if element.HasQuantities:
-                    for quantity in element.HasQuantities:
-                        if quantity.is_a("IfcQuantityVolume"):
-                            volume = quantity.VolumeValue
-                            total_volume += volume
-                            element_volumes.append({
-                                "Element": element.GlobalId,
-                                "Type": element_type,
-                                "Volume_m3": volume
-                            })
+                try:
+                    if element.HasQuantities:
+                        for quantity in element.HasQuantities:
+                            if quantity.is_a("IfcQuantityVolume"):
+                                volume = quantity.VolumeValue
+                                total_volume += volume
+                                element_volumes.append({
+                                    "Element": element.GlobalId,
+                                    "Type": element_type,
+                                    "Volume_m3": volume
+                                })
+                except AttributeError:
+                    # Ignorar elementos que não possuem o atributo `HasQuantities`
+                    print(f"Aviso: Elemento {element.GlobalId} de tipo {element_type} não possui o atributo 'HasQuantities'.")
+                    continue
 
         # Criar nomes de arquivo baseados no nome do arquivo IFC
         base_name = os.path.splitext(os.path.basename(file_path))[0]
@@ -61,7 +62,7 @@ def extract_volume_from_ifc(file_path):
             }, json_file, indent=4)
 
         print(f"Relatórios gerados para: {file_path}")
-        return [txt_path, csv_path, json_path]  # Retorna os caminhos dos relatórios gerados
+        return [txt_path, csv_path, json_path]
 
     except Exception as e:
         print(f"Erro ao processar o arquivo {file_path}: {e}")
@@ -75,7 +76,7 @@ def process_all_ifc_files():
     for file in os.listdir("."):
         if file.endswith(".ifc"):
             reports = extract_volume_from_ifc(file)
-            report_files.extend(reports)  # Adiciona os relatórios gerados à lista
+            report_files.extend(reports)
     return report_files
 
 if __name__ == "__main__":
