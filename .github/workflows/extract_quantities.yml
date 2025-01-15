@@ -20,7 +20,7 @@ jobs:
           python-version: '3.9'
 
       - name: Install dependencies
-        run: pip install ifcopenshell
+        run: pip install -r requirements.txt
 
       - name: List IFC files
         run: ls -l *.ifc
@@ -31,4 +31,10 @@ jobs:
           PYTHONUNBUFFERED: 1
 
       - name: List output files
-        run: ls -l
+        run: ls -l reports
+
+      - name: Upload extracted reports as artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: extracted-reports
+          path: reports/*
