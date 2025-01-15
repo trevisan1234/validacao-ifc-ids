@@ -56,29 +56,4 @@ def extract_volume_from_ifc(file_path):
         # Relatório em JSON
         with open(json_path, "w") as json_file:
             json.dump({
-                "TotalVolume_m3": total_volume,
-                "ElementDetails": element_volumes
-            }, json_file, indent=4)
-
-        print(f"Relatórios gerados com sucesso: {txt_path}, {csv_path}, {json_path}")
-        
-        return [txt_path, csv_path, json_path]  # Retorna os caminhos dos relatórios gerados
-
-    except Exception as e:
-        print(f"Erro ao processar o arquivo {file_path}: {e}")
-        return []
-
-def process_all_ifc_files():
-    """
-    Processa todos os arquivos IFC na pasta atual (raiz).
-    """
-    report_files = []
-    for file in os.listdir("."):
-        if file.endswith(".ifc"):
-            reports = extract_volume_from_ifc(file)
-            report_files.extend(reports)  # Adiciona os relatórios gerados à lista
-    return report_files
-
-if __name__ == "__main__":
-    report_files = process_all_ifc_files()
-    print(f"Relatórios gerados para os arquivos: {report_files}")
+                "TotalVolume_m3": total_volume
