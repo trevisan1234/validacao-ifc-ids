@@ -2,25 +2,24 @@ import ifcopenshell
 import json
 import csv
 import os
-from ifcopenshell.util.element import geometry
 
-def calculate_volume(element):
+def calculate_volume_alternative(element):
     """
-    Calcula o volume de um elemento a partir de sua geometria usando o bounding box.
-    Retorna o volume em metros cúbicos.
+    Calcula o volume de um elemento a partir de suas propriedades, caso disponível.
+    Retorna o volume em metros cúbicos ou 0 se não for possível calcular.
     """
     try:
-        geom = geometry(element)
-        bbox = geom.bounding_box()
-        volume = (
-            (bbox["size_x"] or 0) *
-            (bbox["size_y"] or 0) *
-            (bbox["size_z"] or 0)
-        )
-        return volume
-    except Exception as e:
-        print(f"Erro ao calcular volume para o elemento {element.GlobalId}: {e}")
-        return 0
+        # Verificar se o volume é uma propriedade definida no elemento
+        for definition in element.IsDefinedBy:
+            if definition.is_a("IfcRelDefinesByProperties"):
+                property_set = definition.RelatingPropertyDefinition
+                if property_set.is_a("IfcPropertySet"):
+                    for property in property_set.HasProperties:
+                        if property.is_a("IfcPropertySingleValue") and property.Name == "Volume":
+                            return float(property.NominalValue.wrappedValue)
+    except AttributeError:
+        pass
+    return 0  # Retorna 0 caso o cálculo não seja possível
 
 def extract_volume_from_ifc(file_path):
     """
@@ -49,9 +48,9 @@ def extract_volume_from_ifc(file_path):
                     # Continuar para o cálculo alternativo
                     pass
 
-                # Caso não tenha HasQuantities, calcular o volume com bounding box
+                # Caso não tenha HasQuantities, calcular o volume usando propriedades
                 if volume == 0:
-                    volume = calculate_volume(element)
+                    volume = calculate_volume_alternative(element)
 
                 total_volume += volume
                 element_volumes.append({
