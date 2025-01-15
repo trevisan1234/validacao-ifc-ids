@@ -27,8 +27,6 @@ jobs:
 
       - name: Run extraction script for all IFC files
         run: python extract_quantities.py
-        env:
-          PYTHONUNBUFFERED: 1
 
       - name: Upload reports as artifacts
         uses: actions/upload-artifact@v3
