@@ -13,6 +13,10 @@ def extract_volume_from_ifc(file_path):
         # Carregar o arquivo IFC
         ifc_file = ifcopenshell.open(file_path)
 
+        # Verificar a versão do arquivo
+        ifc_version = ifc_file.schema
+        print(f"Versão do IFC: {ifc_version}")
+
         # Elementos a serem analisados
         elements_to_check = ["IfcBeam", "IfcColumn", "IfcSlab", "IfcPile"]
         total_volume = 0.0
@@ -33,15 +37,11 @@ def extract_volume_from_ifc(file_path):
                                 "Volume_m3": volume
                             })
 
-        # Criar diretório para os relatórios
-        output_dir = "./reports"
-        os.makedirs(output_dir, exist_ok=True)
-
-        # Criar os caminhos para os relatórios
+        # Criar nomes de arquivo baseados no nome do arquivo IFC
         base_name = os.path.splitext(os.path.basename(file_path))[0]
-        txt_path = os.path.join(output_dir, f"{base_name}_quantities_report.txt")
-        csv_path = os.path.join(output_dir, f"{base_name}_quantities_report.csv")
-        json_path = os.path.join(output_dir, f"{base_name}_quantities_report.json")
+        txt_path = f"{base_name}_quantities_report.txt"
+        csv_path = f"{base_name}_quantities_report.csv"
+        json_path = f"{base_name}_quantities_report.json"
 
         # Relatório em TXT
         with open(txt_path, "w") as txt_file:
@@ -67,7 +67,7 @@ def extract_volume_from_ifc(file_path):
         print(f"Relatórios gerados com sucesso: {txt_path}, {csv_path}, {json_path}")
 
     except Exception as e:
-        print(f"Erro ao processar o arquivo {file_path}: {str(e)}")
+        print(f"Erro ao processar o arquivo {file_path}: {e}")
 
 
 def process_all_ifc_files():
