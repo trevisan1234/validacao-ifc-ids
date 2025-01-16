@@ -15,7 +15,7 @@ def extract_net_volume(element):
                             return quantity.VolumeValue
     except Exception as e:
         print(f"Erro ao acessar NetVolume: {e}")
-    return 0  # Retorna 0 se o NetVolume não for encontrado ou calculado
+    return 1  # Retorna 1 se o NetVolume não for encontrado ou calculado
 
 def extract_volumes_with_properties(file_path):
     try:
