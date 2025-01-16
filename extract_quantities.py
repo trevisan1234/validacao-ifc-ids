@@ -6,18 +6,22 @@ def extract_net_volume(element):
     Tenta acessar o NetVolume do PropertySet BaseQuantities associado ao elemento.
     """
     try:
+        has_quantity = False  # Flag para verificar se encontrou um IfcElementQuantity
         for definition in element.IsDefinedBy:
             if definition.is_a("IfcRelDefinesByProperties"):
                 prop_set = definition.RelatingPropertyDefinition
-                if prop_set.is_a("IfcElementQuantity"):  # Verifica se é um conjunto de quantidades
-                    print(f"Encontrado IfcElementQuantity para o elemento ID {element.id()}")
+                if prop_set.is_a("IfcElementQuantity"):
+                    has_quantity = True
+                    print(f"Elemento ID {element.id()} possui IfcElementQuantity.")
                     for quantity in prop_set.Quantities:
-                        print(f" - Verificando quantidade: {quantity.Name}")
+                        print(f" - Nome da propriedade: {quantity.Name}")
                         if quantity.is_a("IfcQuantityVolume") and quantity.Name == "NetVolume":
-                            print(f" - NetVolume encontrado: {quantity.VolumeValue} para o elemento ID {element.id()}")
+                            print(f" - NetVolume encontrado: {quantity.VolumeValue} m³ para o elemento ID {element.id()}")
                             return quantity.VolumeValue
+        if not has_quantity:
+            print(f"Elemento ID {element.id()} não possui IfcElementQuantity.")
     except Exception as e:
-        print(f"Erro ao acessar NetVolume para o elemento ID {element.id()}: {e}")
+        print(f"Erro ao acessar propriedades do elemento ID {element.id()}: {e}")
     return 0  # Retorna 0 se o NetVolume não for encontrado ou calculado
 
 def extract_volumes_with_properties(file_path):
