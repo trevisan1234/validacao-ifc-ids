@@ -1,0 +1,31 @@
+name: Run extract_volumes Script
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  run-extract-volumes:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.x'  # Garantir que a versão do Python é a necessária para seu script
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        # Adicione aqui os comandos para instalar outras dependências, se houver
+        # pip install -r requirements.txt  # Descomente se tiver um arquivo requirements.txt
+
+    - name: Run extract_volumes script
+      run: python ./extract_volumes.py
