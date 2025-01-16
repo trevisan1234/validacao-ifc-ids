@@ -1,36 +1,15 @@
 import ifcopenshell
 import os
 
-def extract_net_volume(element):
-    """
-    Tenta acessar o NetVolume do PropertySet BaseQuantities associado ao elemento.
-    """
-    try:
-        has_quantity = False  # Flag para verificar se encontrou um IfcElementQuantity
-        for definition in element.IsDefinedBy:
-            if definition.is_a("IfcRelDefinesByProperties"):
-                prop_set = definition.RelatingPropertyDefinition
-                if prop_set.is_a("IfcElementQuantity"):
-                    has_quantity = True
-                    print(f"Elemento ID {element.id()} possui IfcElementQuantity.")
-                    for quantity in prop_set.Quantities:
-                        print(f" - Nome da propriedade: {quantity.Name}")
-                        if quantity.is_a("IfcQuantityVolume") and quantity.Name == "NetVolume":
-                            print(f" - NetVolume encontrado: {quantity.VolumeValue} m³ para o elemento ID {element.id()}")
-                            return quantity.VolumeValue
-        if not has_quantity:
-            print(f"Elemento ID {element.id()} não possui IfcElementQuantity.")
-    except Exception as e:
-        print(f"Erro ao acessar propriedades do elemento ID {element.id()}: {e}")
-    return 0  # Retorna 0 se o NetVolume não for encontrado ou calculado
-
 def extract_volume_from_properties(element):
     """
-    Calcula o volume estimado de um elemento usando as propriedades NetArea e Length.
+    Calcula o volume estimado de um elemento usando as propriedades relevantes
+    nos PropertySets associados.
     """
     try:
         net_area = None
         length = None
+        volume = None
 
         # Itera pelos PropertySets associados ao elemento
         for definition in element.IsDefinedBy:
@@ -40,14 +19,22 @@ def extract_volume_from_properties(element):
                     print(f"Elemento ID {element.id()} possui PropertySet: {prop_set.Name}")
                     for prop in prop_set.HasProperties:
                         if prop.is_a("IfcPropertySingleValue"):
-                            if prop.Name == "NetArea":
+                            prop_name = prop.Name.lower()
+                            if "area" in prop_name:
                                 net_area = prop.NominalValue.wrappedValue
                                 print(f"NetArea encontrado: {net_area} m²")
-                            elif prop.Name == "Length":
+                            elif "length" in prop_name:
                                 length = prop.NominalValue.wrappedValue
                                 print(f"Length encontrado: {length} m")
+                            elif "volume" in prop_name:
+                                volume = prop.NominalValue.wrappedValue
+                                print(f"Volume encontrado diretamente: {volume} m³")
+        
+        # Retorna o volume diretamente se encontrado
+        if volume is not None:
+            return volume
 
-        # Calcula o volume estimado, se possível
+        # Caso contrário, calcula o volume estimado
         if net_area is not None and length is not None:
             estimated_volume = net_area * length
             print(f"Volume estimado: {estimated_volume} m³ para o elemento ID {element.id()}")
@@ -70,10 +57,8 @@ def process_file(file_path):
             elements = ifc_file.by_type(element_type)
             print(f"Processando {len(elements)} elementos do tipo {element_type}.")
             for element in elements:
-                # Tenta obter o volume diretamente ou estimá-lo
-                volume = extract_net_volume(element)
-                if volume == 0:  # Se NetVolume não estiver disponível
-                    volume = extract_volume_from_properties(element)
+                # Calcula o volume usando as propriedades disponíveis
+                volume = extract_volume_from_properties(element)
                 total_volumes_by_type[element_type] += volume
 
         # Gerar relatório
