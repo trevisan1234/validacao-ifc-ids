@@ -10,12 +10,15 @@ def extract_net_volume(element):
             if definition.is_a("IfcRelDefinesByProperties"):
                 prop_set = definition.RelatingPropertyDefinition
                 if prop_set.is_a("IfcElementQuantity"):  # Verifica se é um conjunto de quantidades
+                    print(f"Encontrado IfcElementQuantity para o elemento ID {element.id()}")
                     for quantity in prop_set.Quantities:
+                        print(f" - Verificando quantidade: {quantity.Name}")
                         if quantity.is_a("IfcQuantityVolume") and quantity.Name == "NetVolume":
+                            print(f" - NetVolume encontrado: {quantity.VolumeValue} para o elemento ID {element.id()}")
                             return quantity.VolumeValue
     except Exception as e:
-        print(f"Erro ao acessar NetVolume: {e}")
-    return 1  # Retorna 1 se o NetVolume não for encontrado ou calculado
+        print(f"Erro ao acessar NetVolume para o elemento ID {element.id()}: {e}")
+    return 0  # Retorna 0 se o NetVolume não for encontrado ou calculado
 
 def extract_volumes_with_properties(file_path):
     try:
@@ -25,6 +28,7 @@ def extract_volumes_with_properties(file_path):
 
         for element_type in elements_to_check:
             elements = ifc_file.by_type(element_type)
+            print(f"Processando {len(elements)} elementos do tipo {element_type}.")
             for element in elements:
                 volume = extract_net_volume(element)
                 total_volumes_by_type[element_type] += volume
