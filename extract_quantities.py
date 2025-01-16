@@ -15,9 +15,12 @@ def extract_volume_from_properties(element):
                     print(f"Elemento ID {element.id()} possui PropertySet: {prop_set.Name}")
                     for prop in prop_set.HasProperties:
                         if prop.is_a("IfcPropertySingleValue"):
-                            print(f" - Propriedade: {prop.Name}, Tipo: {prop.NominalValue.get_attribute('type')}, Valor: {prop.NominalValue}")
+                            # Exibe detalhes da propriedade
+                            prop_name = prop.Name
+                            prop_value = prop.NominalValue.wrappedValue if prop.NominalValue else "Sem valor"
+                            print(f" - Propriedade: {prop_name}, Valor: {prop_value}")
                         else:
-                            print(f" - Propriedade desconhecida: {prop.Name}, Tipo: {type(prop)}")
+                            print(f" - Propriedade desconhecida ou composta: {prop.Name}")
     except Exception as e:
         print(f"Erro ao acessar propriedades do elemento ID {element.id()}: {e}")
 
