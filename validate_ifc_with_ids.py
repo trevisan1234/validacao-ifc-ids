@@ -10,13 +10,17 @@ def is_field_supported(schema, field):
     schema_fields = {
         "IFC2X3": [
             "IfcWall", "IfcSlab", "IfcWindow", "IfcDoor", "IfcBeam", "IfcColumn", "IfcStair",
-            "IfcRoof", "IfcPile", "IfcFooting", "IfcCovering"
+            "IfcRoof", "IfcPile", "IfcFooting", "IfcCovering", "IfcReinforcingBar",
+            "IfcReinforcingMesh", "IfcMember", "IfcCurtainWall", "IfcPipeSegment",
+            "IfcDuctSegment", "IfcFurniture"
         ],
         "IFC4": [
             "IfcWall", "IfcSlab", "IfcWindow", "IfcDoor", "IfcBeam", "IfcColumn", "IfcStair",
-            "IfcRoof", "IfcPile", "IfcFooting", "IfcElectricGenerator", "IfcTransformer",
-            "IfcUninterruptiblePowerSupply", "IfcCableSegment", "IfcPump", "IfcTank", 
-            "IfcWaterHeater", "IfcCovering"
+            "IfcRoof", "IfcPile", "IfcFooting", "IfcCovering", "IfcElectricGenerator",
+            "IfcTransformer", "IfcUninterruptiblePowerSupply", "IfcCableSegment",
+            "IfcPump", "IfcTank", "IfcWaterHeater", "IfcReinforcingBar", "IfcReinforcingMesh",
+            "IfcMember", "IfcCurtainWall", "IfcElectricAppliance", "IfcFlowTerminal",
+            "IfcPipeSegment", "IfcDuctSegment", "IfcFurniture"
         ]
     }
     return field in schema_fields.get(schema, [])
@@ -35,12 +39,16 @@ CSV_REPORT_PATH = "./validation_report.csv"
 
 additional_fields = [
     "IfcWall", "IfcSlab", "IfcWindow", "IfcDoor", "IfcBeam", "IfcColumn", "IfcStair", "IfcRoof",
-    "IfcPile",  # Elementos de concreto armado em fundações profundas
-    "IfcFooting",  # Elementos de concreto armado em fundações rasas
-    "IfcElectricGenerator", "IfcTransformer", "IfcUninterruptiblePowerSupply",  # Instalações elétricas de alto custo
-    "IfcCableSegment",  # Condutores de energia elétrica
-    "IfcPump", "IfcTank", "IfcWaterHeater",  # Instalações hidráulicas/sanitárias de alto custo
-    "IfcCovering"  # Elementos de impermeabilização
+    "IfcPile", "IfcFooting",  # Fundações
+    "IfcElectricGenerator", "IfcTransformer", "IfcUninterruptiblePowerSupply", "IfcCableSegment",
+    "IfcPump", "IfcTank", "IfcWaterHeater", "IfcCovering",  # Elementos gerais e hidráulicos
+    "IfcReinforcingBar", "IfcReinforcingMesh",  # Armaduras para concreto armado
+    "IfcMember",  # Vigas secundárias
+    "IfcCurtainWall",  # Fachadas estruturais
+    "IfcElectricAppliance",  # Equipamentos elétricos
+    "IfcFlowTerminal",  # Terminais de saída de fluxo (água/ar)
+    "IfcPipeSegment", "IfcDuctSegment",  # Tubulações e dutos
+    "IfcFurniture"  # Mobiliário fixo
 ]
 
 # Função para validar a presença dos campos no arquivo IFC
